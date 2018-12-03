@@ -29,6 +29,34 @@ import (
 	"github.com/ipfn/go-entropy/entropy"
 )
 
+const (
+	// StandardScryptN is the N parameter of Scrypt encryption algorithm, using 256MB
+	// memory and taking approximately 1s CPU time on a modern processor.
+	StandardScryptN = 1 << 18
+
+	// StandardScryptP is the P parameter of Scrypt encryption algorithm, using 256MB
+	// memory and taking approximately 1s CPU time on a modern processor.
+	StandardScryptP = 1
+
+	// LightScryptN is the N parameter of Scrypt encryption algorithm, using 4MB
+	// memory and taking approximately 100ms CPU time on a modern processor.
+	LightScryptN = 1 << 12
+
+	// LightScryptP is the P parameter of Scrypt encryption algorithm, using 4MB
+	// memory and taking approximately 100ms CPU time on a modern processor.
+	LightScryptP = 6
+)
+
+// EncryptStandard - Encrypts a box using standard scrypt parameters.
+func EncryptStandard(body, pwd []byte, scryptN, scryptP int) (_ SealedBox, err error) {
+	return Encrypt(body, pwd, StandardScryptN, StandardScryptP)
+}
+
+// EncryptLight - Encrypts a box using light scrypt parameters.
+func EncryptLight(body, pwd []byte, scryptN, scryptP int) (_ SealedBox, err error) {
+	return Encrypt(body, pwd, LightScryptN, LightScryptP)
+}
+
 // Encrypt - Encrypts a box using the specified scrypt parameters.
 func Encrypt(body, pwd []byte, scryptN, scryptP int) (_ SealedBox, err error) {
 	salt, err := entropy.New(32)
