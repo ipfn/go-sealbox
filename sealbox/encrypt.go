@@ -25,7 +25,7 @@ import (
 
 	"golang.org/x/crypto/scrypt"
 
-	"github.com/ipfn/go-digest/digest"
+	"github.com/ipfn/go-digesteve/digesteve/keccak256sum"
 	"github.com/ipfn/go-entropy/entropy"
 )
 
@@ -91,7 +91,7 @@ func Encrypt(body, pwd []byte, scryptN, scryptP int) (_ SealedBox, err error) {
 				DKLen: scryptDKLen,
 				Salt:  hex.EncodeToString(salt),
 			},
-			MAC: hex.EncodeToString(digest.SumKeccak256Bytes(derivedKey[16:32], cipherText)),
+			MAC: hex.EncodeToString(keccak256sum.Bytes(derivedKey[16:32], cipherText)),
 		},
 	}, nil
 }
