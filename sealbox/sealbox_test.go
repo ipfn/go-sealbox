@@ -1,30 +1,30 @@
 // Copyright © 2018 The IPFN Developers. All Rights Reserved.
 // Copyright © 2016-2018 The go-ethereum Authors. All Rights Reserved.
 //
-// This file is part of the IPFN project.
-// This file was part of the go-ethereum library.
-//
-// The IPFN project is free software: you can redistribute it and/or modify
-// it under the terms of the GNU Lesser General Public License as published by
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
 // the Free Software Foundation, either version 3 of the License, or
 // (at your option) any later version.
 //
-// The IPFN project is distributed in the hope that it will be useful,
+// This program is distributed in the hope that it will be useful,
 // but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-// GNU Lesser General Public License for more details.
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
 //
-// You should have received a copy of the GNU Lesser General Public License
-// along with the go-ethereum library. If not, see <http://www.gnu.org/licenses/>.
+// You should have received a copy of the GNU General Public License
+// along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 package sealbox
 
 // Implements #TST-crypto-sealed
 
 import (
+	"encoding/hex"
 	"encoding/json"
 	"io/ioutil"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 const (
@@ -32,38 +32,37 @@ const (
 	veryLightScryptP = 1
 )
 
+func TestGetKDFKey(t *testing.T) {
+	keyjson, err := ioutil.ReadFile("testdata/very-light-scrypt.json")
+	var box SealedBox
+	err = json.Unmarshal(keyjson, &box)
+	assert.NoError(t, err)
+	key, err := getKDFKey(&box.Crypto, "")
+	assert.NoError(t, err)
+	assert.Equal(t, "5d815789adee8991e2a02a69c53ef76202ed5b0ee7fb5d510c653a6b0c0b6880", hex.EncodeToString(key))
+}
+
 // Tests that a json key file can be decrypted and encrypted in multiple rounds.
 func TestKeyEncryptDecrypt(t *testing.T) {
 	keyjson, err := ioutil.ReadFile("testdata/very-light-scrypt.json")
-	if err != nil {
-		t.Fatal(err)
-	}
+	assert.NoError(t, err)
 	password := ""
 
 	// Do a few rounds of decryption and encryption
 	for i := 0; i < 3; i++ {
 		var box SealedBox
 		err = json.Unmarshal(keyjson, &box)
-		if err != nil {
-			return
-		}
-		if _, err := box.Decrypt(password + "bad"); err == nil {
-			t.Errorf("test %d: json key decrypted with bad password", i)
-		}
+		assert.NoError(t, err)
+		_, err = box.Decrypt(password + "bad")
+		assert.Errorf(t, err, "test %d: json key decrypted with bad password", i)
 		// Decrypt with the correct password
 		body, err := box.Decrypt(password)
-		if err != nil {
-			t.Fatalf("test %d: json key failed to decrypt: %v", i, err)
-		}
+		assert.NoErrorf(t, err, "test %d: json key failed to decrypt", i)
 		// Recrypt with a new password and start over
 		password += "new data appended"
 		box, err = Encrypt(body, []byte(password), veryLightScryptN, veryLightScryptP)
-		if err != nil {
-			t.Errorf("test %d: failed to encrypt %v", i, err)
-		}
+		assert.NoErrorf(t, err, "test %d: failed to encrypt", i)
 		keyjson, err = json.Marshal(box)
-		if err != nil {
-			t.Errorf("test %d: failed to marshal json %v", i, err)
-		}
+		assert.NoErrorf(t, err, "test %d: failed to marshal json", i)
 	}
 }
